@@ -7,11 +7,17 @@ import { signOut } from "next-auth/react";
 import AddTodo from "@/components/AddTodo";
 import TodoList from "@/components/TodoList";
 import DarkModeToggle from "@/components/ui/DarkModeToggle";
+import Toast from "@/components/Toast";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function Home() {
   const { data: session, status } = useSession();
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+  const [editTodo, setEditTodo] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, todoId: null });
   const router = useRouter();
 
   // Redirect to login if not authenticated
@@ -41,65 +47,90 @@ export default function Home() {
   }
 
   useEffect(() => {
+    let isActive = true;
+
     if (status === "authenticated") {
       loadTodos();
     }
+
+    return () => {
+      isActive = false;
+    };
   }, [status]);
 
-  async function handleEdit(id) {
+  function handleEdit(todo) {
     if (status !== "authenticated") return;
-    
-    const newText = prompt("Enter new todo text:");
-    if (!newText) return;
-    if(todos.some((todo) => todo.text === newText)) {
-      alert("Todo already exists.");
-      return;
-    }
-    try {
-      let res = await fetch("/api/todos", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id, text: newText }),
-      });
-      
-      if(!res.ok) {
-        if (res.status === 401) {
-          router.push("/login");
-          return;
-        }
-        alert("Failed to update todo.");
-        return;
-      }
-      loadTodos();
-    } catch (error) {
-      console.error("Error updating todo:", error);
-      alert("Failed to update todo.");
-    }
+    setEditMode(true);
+    setEditTodo(todo);
   }
 
-  async function handleDelete(id) {
+  function handleCancelEdit() {
+    setEditMode(false);
+    setEditTodo(null);
+  }
+
+  function handleDelete(id) {
     if (status !== "authenticated") return;
-    
-    try {
-      let res = await fetch(`/api/todos/?id=${id}`, {
-        method: "DELETE",
-      });
-      
-      if(!res.ok) {
-        if (res.status === 401) {
-          router.push("/login");
+    setConfirmDialog({ isOpen: true, todoId: id });
+  }
+
+  function confirmDelete() {
+    const id = confirmDialog.todoId;
+    if (!id) return;
+
+    fetch(`/api/todos/?id=${id}`, {
+      method: "DELETE",
+    })
+      .then((res) => {
+        if (!res.ok) {
+          if (res.status === 401) {
+            router.push("/login");
+            return;
+          }
+          setToast({ message: "Failed to delete todo.", type: "error" });
           return;
         }
-        alert("Failed to delete todo.");
-        return;
-      }
-      loadTodos();
-    } catch (error) {
-      console.error("Error deleting todo:", error);
-      alert("Failed to delete todo.");
-    }
+        setToast({ message: "Todo deleted successfully!", type: "success" });
+        loadTodos();
+      })
+      .catch((error) => {
+        console.error("Error deleting todo:", error);
+        setToast({ message: "Failed to delete todo.", type: "error" });
+      })
+      .finally(() => {
+        setConfirmDialog({ isOpen: false, todoId: null });
+      });
+  }
+
+  function cancelDelete() {
+    setConfirmDialog({ isOpen: false, todoId: null });
+  }
+
+  function handleToggle(todo) {
+    if (status !== "authenticated") return;
+
+    fetch(`/api/todos/?id=${todo.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action: "toggle" }),
+    })
+      .then((res) => {
+        if (!res.ok) {
+          if (res.status === 401) {
+            router.push("/login");
+            return;
+          }
+          setToast({ message: "Failed to toggle todo.", type: "error" });
+          return;
+        }
+        loadTodos();
+      })
+      .catch((error) => {
+        console.error("Error toggling todo:", error);
+        setToast({ message: "Failed to toggle todo.", type: "error" });
+      });
   }
 
   const handleSignOut = async () => {
@@ -149,8 +180,15 @@ export default function Home() {
         </header>
 
         <main className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6">
-          <AddTodo onAdd={loadTodos} todos={todos} />
-          
+          <AddTodo 
+            onAdd={loadTodos} 
+            onEdit={handleCancelEdit}
+            todos={todos} 
+            editMode={editMode}
+            editTodo={editTodo}
+            showToast={(message, type) => setToast({ message, type })}
+          />
+
           {loading ? (
             <div className="flex justify-center items-center py-10">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
@@ -165,10 +203,26 @@ export default function Home() {
               <p className="text-gray-500 dark:text-gray-400 text-lg">No todos yet. Add one above!</p>
             </div>
           ) : (
-            <TodoList todos={todos} onEdit={handleEdit} onDelete={handleDelete} />
+            <TodoList todos={todos} onEdit={handleEdit} onDelete={handleDelete} onToggle={handleToggle} />
           )}
         </main>
       </div>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title="Delete Todo?"
+        message="Are you sure you want to delete this todo? This action cannot be undone."
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </div>
   );
 }

@@ -1,28 +1,50 @@
-// Shared in-memory database for demo purposes
-// In production, you would use a real database like PostgreSQL, MongoDB, etc.
+import mongoose from 'mongoose';
+import dbConnect from './mongodb';
 
-// Initial users data
-const initialUsers = [
-  {
-    id: "1",
-    name: "Demo User",
-    email: "demo@example.com",
-    password: "$2b$10$3dYCxu5pUwVpQ.HKqOeW3O0N58zH8vQZJzY3Xg5yYv1q4v8pL0O9W", // Hashed "password123"
-  }
-];
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
+}, {
+  timestamps: true,
+});
 
-// Using a module-level variable to maintain state in development
-// Note: This won't persist in production serverless environments
-let users = [...initialUsers];
+// Prevent model recompilation in development
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 
-export const getUsers = () => users;
-export const addUser = (user) => {
-  users.push(user);
-};
-export const findUserByEmail = (email) => users.find(user => user.email === email);
-export const findUserById = (id) => users.find(user => user.id === id);
+export async function findUserByEmail(email) {
+  await dbConnect();
+  const user = await User.findOne({ email: email.toLowerCase() });
+  return user ? user.toObject() : null;
+}
 
-// For development purposes - reset users to initial state if needed
-export const resetUsers = () => {
-  users = [...initialUsers];
-};
+export async function findUserById(id) {
+  await dbConnect();
+  const user = await User.findById(id);
+  return user ? user.toObject() : null;
+}
+
+export async function createUser(name, email, password) {
+  await dbConnect();
+  const user = await User.create({ name, email: email.toLowerCase(), password });
+  return user.toObject();
+}
+
+export async function checkUserExists(email) {
+  await dbConnect();
+  const user = await User.findOne({ email: email.toLowerCase() });
+  return !!user;
+}

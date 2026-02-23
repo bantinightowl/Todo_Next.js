@@ -1,4 +1,8 @@
-export function generateUnvercelID() {
+/**
+ * Generates a unique Vercel-style ID
+ * Format: VRC-YYYY-MM-DD-XXXXXXXX
+ */
+export function generateVercelId() {
   const date = new Date();
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, "0");
@@ -8,8 +12,5 @@ export function generateUnvercelID() {
   for (let i = 0; i < 8; i++) {
     randomPart += chars[Math.floor(Math.random() * chars.length)];
   }
-  return `UNV-${yyyy}-${mm}-${dd}-${randomPart}`;
+  return `VRC-${yyyy}-${mm}-${dd}-${randomPart}`;
 }
-console.log(generateUnvercelID());
-
-

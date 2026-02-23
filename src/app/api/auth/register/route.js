@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
-import { addUser, findUserByEmail } from "@/lib/usersDb";
+import { createUser, checkUserExists } from "@/lib/usersDb";
 
 export async function POST(req) {
   try {
@@ -24,8 +24,8 @@ export async function POST(req) {
     }
 
     // Check if user already exists
-    const existingUser = findUserByEmail(email);
-    if (existingUser) {
+    const userExists = await checkUserExists(email);
+    if (userExists) {
       return NextResponse.json(
         { error: "User with this email already exists" },
         { status: 409 }
@@ -43,16 +43,8 @@ export async function POST(req) {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
-    const newUser = {
-      id: Date.now().toString(), // In production, use proper UUID
-      name,
-      email,
-      password: hashedPassword,
-    };
-
-    // Add user to shared storage
-    addUser(newUser);
+    // Create new user in MongoDB
+    const newUser = await createUser(name, email, hashedPassword);
 
     // Return success response (excluding password)
     const { password: _, ...userWithoutPassword } = newUser;

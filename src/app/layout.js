@@ -12,6 +12,8 @@ export const metadata = {
   description: "A secure todo application with user authentication",
 };
 
+export const viewport = "width=device-width, initial-scale=1, maximum-scale=5";
+
 export default async function RootLayout({ children }) {
   const session = await getServerSession(authOptions);
   

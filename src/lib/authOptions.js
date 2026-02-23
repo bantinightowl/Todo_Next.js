@@ -17,25 +17,29 @@ export const authOptions = {
             console.error("Missing credentials");
             return null;
           }
-          
+
           // Find user by email from shared database
-          const user = findUserByEmail(credentials.email);
-          
-          if (user) {
-            // Check if password matches
-            const isValid = await bcrypt.compare(credentials.password, user.password);
-            if (isValid) {
-              // Return user object without password
-              const { password, ...userWithoutPassword } = user;
-              return userWithoutPassword;
-            } else {
-              console.error("Invalid password");
-              return null;
-            }
+          const user = await findUserByEmail(credentials.email);
+
+          if (!user) {
+            console.error("User not found:", credentials.email);
+            return null;
           }
-          
-          console.error("User not found");
-          return null;
+
+          // Check if password matches
+          const isValid = await bcrypt.compare(credentials.password, user.password);
+          if (!isValid) {
+            console.error("Invalid password for user:", credentials.email);
+            return null;
+          }
+
+          // Return user object without password
+          const { password, ...userWithoutPassword } = user;
+          return {
+            id: user._id.toString(),
+            email: user.email,
+            name: user.name,
+          };
         } catch (error) {
           console.error("Authorization error:", error);
           return null;
@@ -64,13 +68,10 @@ export const authOptions = {
   pages: {
     signIn: '/login',
   },
-  secret: process.env.NEXTAUTH_SECRET || 
-         (process.env.NODE_ENV === "production" 
-           ? undefined 
-           : "dev_secret_for_testing_purpose_only"),
+  secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: parseInt(process.env.NEXTAUTH_SESSION_MAX_AGE, 10) || (30 * 24 * 60 * 60), // Default 30 days
   },
-  debug: process.env.NODE_ENV === "development", // Enable debug in development
+  debug: process.env.NODE_ENV === "development",
 };
