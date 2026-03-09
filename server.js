@@ -48,8 +48,6 @@ app.prepare().then(() => {
     process.env.NEXT_PUBLIC_APP_URL,
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://todo-next-js.onrender.com/",
-    
   ].filter(Boolean);
 
   const io = new Server(httpServer, {
