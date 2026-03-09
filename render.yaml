@@ -13,7 +13,7 @@ services:
       - key: PORT
         value: 3000
       - key: MONGODB_URI
-        value: mongodb+srv://bks03011997_db_user:advanced_todo@54321@cluster0.ot7kqxd.mongodb.net/myapp?retryWrites=true&w=majority
+        value: mongodb+srv://bks03011997_db_user:advanced_todo%4054321@cluster0.ot7kqxd.mongodb.net/myapp?retryWrites=true&w=majority
       - key: NEXTAUTH_SECRET
         value: K1ndCX5bf1U0aTpsHAGkMjI8Y1CiXD8qPiTJFdO/Jyk=
       - key: NEXTAUTH_URL

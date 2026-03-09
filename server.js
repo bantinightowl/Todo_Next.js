@@ -1,4 +1,5 @@
 // Load environment variables FIRST before any imports
+// Note: On Render/Railway, env vars are set in dashboard, not files
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -6,13 +7,18 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load .env.local BEFORE anything else
-dotenv.config({ path: path.resolve(__dirname, ".env.local") });
-dotenv.config({ path: path.resolve(__dirname, ".env") });
+// Load .env files for local development (optional)
+// In production, env vars come from the hosting platform
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config({ path: path.resolve(__dirname, ".env.local") });
+  dotenv.config({ path: path.resolve(__dirname, ".env") });
+}
 
 console.log('[Server] Environment loaded:', {
   MONGODB_URI: !!process.env.MONGODB_URI,
   NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
+  NODE_ENV: process.env.NODE_ENV,
+  PORT: process.env.PORT,
 });
 
 // Now import the rest
