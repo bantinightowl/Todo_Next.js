@@ -33,33 +33,22 @@
 
 
 import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 
 const publicPaths = ['/login', '/register'];
 
 export function middleware(req) {
   const { pathname } = req.nextUrl;
-  let isLoggedIn = false;
-
-  try {
-    const token = req.cookies.get('next-auth.session-token')?.value;
-    if (token) {
-      jwt.verify(token, process.env.NEXTAUTH_SECRET);
-      isLoggedIn = true;
-    }
-  } catch (err) {
-    console.warn("Middleware auth error:", err.message);
-  }
+  const token = req.cookies.get('next-auth.session-token')?.value;
 
   const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
 
-  if (!isLoggedIn && !isPublicPath) {
+  if (!token && !isPublicPath) {
     const url = req.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 
-  if (isLoggedIn && isPublicPath) {
+  if (token && isPublicPath) {
     const url = req.nextUrl.clone();
     url.pathname = '/';
     return NextResponse.redirect(url);
