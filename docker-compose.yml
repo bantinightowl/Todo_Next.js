@@ -1,0 +1,49 @@
+# Docker Compose for local testing with MongoDB
+# Run: docker-compose up -d
+
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7
+    container_name: myapp-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: myapp
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - myapp-network
+
+  # Next.js App with Socket.io
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: myapp-app
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://admin:admin123@mongodb:27017/myapp?authSource=admin
+      - NEXTAUTH_SECRET=your-secret-key-change-this-in-production-min-32-chars
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+    networks:
+      - myapp-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  myapp-network:
+    driver: bridge

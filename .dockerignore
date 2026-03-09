@@ -1,0 +1,51 @@
+# Dependencies
+node_modules
+npm-debug.log
+
+# Next.js
+.next
+out
+
+# Build info
+build
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation (not needed in production)
+*.md
+!README.md
+
+# Test files
+TEST_*.md
+CHAT_*.md
+*_FIX.md
+*_SUMMARY.md
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Config (will be set via environment)
+railway.toml
+nixpacks.toml
+render.yaml
+Procfile
