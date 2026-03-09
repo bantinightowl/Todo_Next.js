@@ -10,9 +10,7 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   
   // Ensure these are included in standalone output
-  experimental: {
-    serverComponentsExternalPackages: ['mongoose', 'bcrypt', 'jose'],
-  },
+  serverExternalPackages: ['mongoose', 'bcrypt', 'jose'],
 };
 
 export default nextConfig;
